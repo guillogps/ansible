@@ -1,6 +1,6 @@
 ---
-- name: Ejecucion de comandos en Linux usando shell
-  hosts: 172.22.8.106
+- name: Ejecucion de comandos en Linux
+  hosts: all
   become: yes
   gather_facts: no
 
@@ -8,27 +8,38 @@
     ruta_log: /tmp/ansible_ejecucion.log
 
   tasks:
-
     - name: Crear archivo de log
       file:
         path: "{{ ruta_log }}"
         state: touch
         mode: '0644'
 
-    - name: Ejecutar comando complejo (uso de shell)
+    - name: Registrar inicio
+      shell: echo "===== INICIO $(date) =====" >> {{ ruta_log }}
+      args:
+        executable: /bin/bash
+
+    - name: Instalar open-vm-tools
+      package:
+        name: open-vm-tools
+        state: present
+      register: resultado_paquete
+
+    - name: Registrar uso de disco
       shell: |
-        echo "===== INICIO $(date) =====" >> {{ ruta_log }}
-        sudo yum install -y open-vm-tools >> {{ ruta_log }}
         df -h >> {{ ruta_log }}
         echo "===== FIN =====" >> {{ ruta_log }}
       args:
         executable: /bin/bash
       register: resultado_shell
 
-    - name: Mostrar salida del comando
+    - name: Mostrar resultado instalacion
+      debug:
+        var: resultado_paquete
+
+    - name: Mostrar salida shell
       debug:
         var: resultado_shell.stdout_lines
-
     - name: Validar si hubo error
       fail:
         msg: "El comando fallo durante la ejecucion"
